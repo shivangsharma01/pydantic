@@ -408,6 +408,40 @@ print(DemoDataclass(product_id=2468))
 #> DemoDataclass(product_id='02468')
 ```
 
+When a dataclass is instantiated, a *before* model validator receives an
+[`ArgsKwargs`][pydantic_core.ArgsKwargs] object containing the raw constructor
+arguments. Access positional arguments through its `args` tuple and keyword
+arguments through its `kwargs` dictionary, which can be `None` when no keyword
+arguments were provided. These values have not yet been validated or mapped to
+their dataclass fields.
+
+```python
+from pydantic_core import ArgsKwargs
+
+from pydantic import model_validator
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class Point:
+    x: int
+    y: int
+
+    @model_validator(mode='before')
+    @classmethod
+    def inspect_arguments(cls, values: ArgsKwargs) -> ArgsKwargs:
+        print(f'Positional: {values.args}')
+        #> Positional: ('1',)
+        print(f'Keyword: {values.kwargs}')
+        #> Keyword: {'y': '2'}
+        return values
+
+
+point = Point('1', y='2')
+print(point)
+#> Point(x=1, y=2)
+```
+
 <!-- markdownlint-disable-next-line strong-style -->
 The dataclass [`__post_init__()`][dataclasses.__post_init__] method is also supported, and will
 be called between the calls to *before* and *after* model validators.
